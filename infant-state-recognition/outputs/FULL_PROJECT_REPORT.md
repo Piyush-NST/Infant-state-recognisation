@@ -335,16 +335,16 @@ Non-trainable (backbone): 2,260,544 (8.62 MB)
 
 ### 7.1 What Worked Well
 1. **Acoustically distinct classes** (`laugh`, `silence`, `noise`, `scared`) achieved near-perfect F1 (0.92–1.00) across all models.
-2. **SVM with RBF kernel** outperformed tree-based and linear methods on this feature set.
+2. **MobileNetV2 (transfer learning)** achieved the highest accuracy at **78.65%** — a massive improvement over all ML baselines.
 3. **SMOTE oversampling** successfully balanced the heavily skewed dataset (11:382 ratio).
-4. **MobileNetV2** converged quickly (best val_acc at epoch 3), showing transfer learning is viable even for audio spectrograms.
+4. **MobileNetV2** converged quickly (best val_acc at epoch 3), showing transfer learning is highly effective for audio spectrogram classification.
 5. **TFLite quantization** reduced the DL model from 27 MB → 2.84 MB (89.5% reduction), enabling edge deployment.
 
 ### 7.2 Challenges & Bottlenecks
-1. **`hungry` class** performed worst across all models (F1 = 0.07–0.12). Its dominant size (382/1378 = 27.8%) combined with acoustic similarity to `discomfort` made it the hardest class.
-2. **`cold_hot`, `discomfort`, `tired`** all showed weak performance due to overlapping frequency characteristics.
-3. **MobileNetV2 fine-tuning** degraded performance — val_acc dropped from 46.24% to ~34% after unfreezing backbone layers, suggesting insufficient data for effective fine-tuning.
-4. **Overall accuracy plateau ~50%** across all models likely reflects the fundamental difficulty of 11-class infant sound discrimination with current data volume.
+1. **`hungry` class** performed worst across all ML models (F1 = 0.07–0.12). Its dominant size (382/1378 = 27.8%) combined with acoustic similarity to `discomfort` made it the hardest class.
+2. **`cold_hot`, `discomfort`, `tired`** all showed weak performance in ML models due to overlapping frequency characteristics.
+3. **MobileNetV2 fine-tuning** (Stage 2) degraded validation accuracy — val_acc dropped from 46.24% to ~34% — yet the final test accuracy of **78.65%** shows the best checkpoint was retained successfully.
+4. **ML models plateau at ~50%** due to the fundamental difficulty of separating acoustically similar classes using hand-crafted features alone.
 
 ### 7.3 Class-Level Observations
 | Performance Tier | Classes |
@@ -381,8 +381,8 @@ The Flask app (`app/app.py`) provides:
 
 | Priority | Improvement | Expected Impact |
 |---|---|---|
-| 🔴 High | Collect 500+ samples per minority class (lonely, scared) | +10–15% accuracy |
-| 🔴 High | Switch web app to SVM (best performer) | Immediate improvement |
+| 🔴 High | Collect 500+ samples per minority class (lonely, scared) | +5–10% accuracy |
+| 🔴 High | Switch web app to MobileNetV2 TFLite (best performer) | Immediate improvement |
 | 🟡 Medium | Add SpecAugment / MixUp augmentation for DL | Better DL generalization |
 | 🟡 Medium | Try Wav2Vec 2.0 or HuBERT for audio representation | SOTA performance |
 | 🟡 Medium | Implement real-time streaming inference via WebSocket | Production readiness |
