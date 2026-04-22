@@ -1,0 +1,80 @@
+Loading Data for Deep Learning (all supported audio formats)...
+Classes: ['belly_pain', 'burping', 'cold_hot', 'discomfort', 'hungry', 'laugh', 'lonely', 'noise', 'scared', 'silence', 'tired']
+Samples: 3765
+Train shape: (3012, 160, 160, 3) | Test shape: (753, 160, 160, 3)
+Creating MobileNetV2 model for 11 classes...
+Loaded ImageNet weights for MobileNetV2.
+Model: "functional"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)      │ (None, 160, 160, 3)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ mobilenetv2_1.00_160            │ (None, 5, 5, 1280)     │     2,257,984 │
+│ (Functional)                    │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ global_average_pooling2d        │ (None, 1280)           │             0 │
+│ (GlobalAveragePooling2D)        │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization             │ (None, 1280)           │         5,120 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout (Dropout)               │ (None, 1280)           │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense (Dense)                   │ (None, 256)            │       327,936 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_1 (Dropout)             │ (None, 256)            │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_1 (Dense)                 │ (None, 11)             │         2,827 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+ Total params: 2,593,867 (9.89 MB)
+ Trainable params: 333,323 (1.27 MB)
+ Non-trainable params: 2,260,544 (8.62 MB)
+Class weights (soft): {0: 0.9937509665940242, 1: 1.031654474164487, 2: 1.0825822997803287, 3: 0.9539233661671348, 4: 0.573116373276265, 5: 1.078394344817499, 6: 3.339993346633426, 8: 2.5049950099750697, 9: 1.078394344817499, 10: 0.9612108927639648}
+
+Stage 1: training classifier head...
+Epoch 1/22
+
+Epoch 1: val_accuracy improved from -inf to 0.39823, saving model to models/DeepLearning_MobileNetV2_best.keras
+80/80 - 12s - 146ms/step - accuracy: 0.3480 - loss: 1.9555 - val_accuracy: 0.3982 - val_loss: 1.5176 - learning_rate: 1.0000e-03
+Epoch 2/22
+
+Epoch 2: val_accuracy improved from 0.39823 to 0.42920, saving model to models/DeepLearning_MobileNetV2_best.keras
+80/80 - 8s - 105ms/step - accuracy: 0.4570 - loss: 1.3372 - val_accuracy: 0.4292 - val_loss: 1.3957 - learning_rate: 1.0000e-03
+Epoch 3/22
+
+Epoch 3: val_accuracy improved from 0.42920 to 0.46239, saving model to models/DeepLearning_MobileNetV2_best.keras
+80/80 - 8s - 100ms/step - accuracy: 0.5258 - loss: 1.1075 - val_accuracy: 0.4624 - val_loss: 1.3147 - learning_rate: 1.0000e-03
+Epoch 4/22
+
+Epoch 4: val_accuracy did not improve from 0.46239
+80/80 - 8s - 94ms/step - accuracy: 0.5566 - loss: 0.9725 - val_accuracy: 0.4624 - val_loss: 1.2857 - learning_rate: 1.0000e-03
+Epoch 5/22
+
+Epoch 5: val_accuracy did not improve from 0.46239
+80/80 - 8s - 100ms/step - accuracy: 0.5855 - loss: 0.8959 - val_accuracy: 0.4602 - val_loss: 1.2905 - learning_rate: 1.0000e-03
+Epoch 6/22
+
+Epoch 6: val_accuracy did not improve from 0.46239
+80/80 - 8s - 100ms/step - accuracy: 0.5996 - loss: 0.8486 - val_accuracy: 0.4535 - val_loss: 1.2995 - learning_rate: 1.0000e-03
+Epoch 7/22
+
+Epoch 7: val_accuracy did not improve from 0.46239
+
+Epoch 7: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+80/80 - 8s - 98ms/step - accuracy: 0.6379 - loss: 0.7670 - val_accuracy: 0.4292 - val_loss: 1.3402 - learning_rate: 1.0000e-03
+Epoch 8/22
+
+Epoch 8: val_accuracy did not improve from 0.46239
+80/80 - 8s - 99ms/step - accuracy: 0.6590 - loss: 0.6923 - val_accuracy: 0.4159 - val_loss: 1.3737 - learning_rate: 5.0000e-04
+Epoch 9/22
+
+Epoch 9: val_accuracy did not improve from 0.46239
+80/80 - 10s - 128ms/step - accuracy: 0.6758 - loss: 0.6625 - val_accuracy: 0.4292 - val_loss: 1.4070 - learning_rate: 5.0000e-04
+
+Stage 2: fine-tuning top backbone layers...
+Epoch 1/8
+
+Epoch 1: val_accuracy did not improve from 0.46239
+80/80 - 14s - 181ms/step - accuracy: 0.4656 - loss: 1.2588 - val_accuracy: 0.3429 - val_loss: 1.8266 - learning_rate: 5.0000e-05
+Epoch 2/8

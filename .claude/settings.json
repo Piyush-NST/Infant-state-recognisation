@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(mkdir -p data/kaggle_baby_cry)",
+      "Bash(ln -sfn __TRACKED_VAR__/__TRACKED_VAR__ data/kaggle_baby_cry/__TRACKED_VAR__)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('train_all_and_report.py'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
+      "Bash(kill -9 78449 79313 78447)",
+      "Bash(python3 -c \"import kagglehub; print\\(kagglehub.__version__\\)\")",
+      "Bash(rm -rf outputs models data/raw data/raw_binary_backup)",
+      "Bash(mkdir -p outputs models data)",
+      "Bash(python3 -u train_all_and_report.py)",
+      "Bash(awk -F/ '{print $\\(NF-1\\)}')",
+      "Bash(pkill -9 -f \"train_all_and_report\")",
+      "Bash(pkill -9 -f \"python3 -u train_all\")"
+    ],
+    "additionalDirectories": [
+      "/Users/newtonschool/Infant-state-recognisation/infant-state-recognition/data/kaggle_baby_cry"
+    ]
+  }
+}

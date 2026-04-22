@@ -1,0 +1,55 @@
+Loading Data for Advanced ML...
+Classes found: ['belly_pain', 'burping', 'cold_hot', 'discomfort', 'hungry', 'laugh', 'lonely', 'noise', 'scared', 'silence', 'tired'] (11 classes, 3765 samples)
+Using stratified CV with 3 folds
+
+Training Random Forest...
+Fitting 3 folds for each of 9 candidates, totalling 27 fits
+Best RF Params: {'max_depth': 10, 'n_estimators': 100}
+--- Advanced_RandomForest Evaluation ---
+Accuracy: 0.4940
+Precision: 0.4539
+Recall: 0.4940
+F1_Score: 0.4217
+
+Training SVM...
+--- Advanced_SVM Evaluation ---
+Accuracy: 0.5485
+Precision: 0.5265
+Recall: 0.5485
+F1_Score: 0.4557
+
+Training XGBoost (manual robust search + early stopping)...
+XGBoost trial 1/24 | val_f1=0.4416
+XGBoost trial 2/24 | val_f1=0.4323
+XGBoost trial 3/24 | val_f1=0.4261
+XGBoost trial 4/24 | val_f1=0.3691
+XGBoost trial 5/24 | val_f1=0.3928
+XGBoost trial 6/24 | val_f1=0.3880
+XGBoost trial 7/24 | val_f1=0.3854
+XGBoost trial 8/24 | val_f1=0.3970
+XGBoost trial 9/24 | val_f1=0.3796
+XGBoost trial 10/24 | val_f1=0.4252
+XGBoost trial 11/24 | val_f1=0.3700
+XGBoost trial 12/24 | val_f1=0.3828
+XGBoost trial 13/24 | val_f1=0.3973
+XGBoost trial 14/24 | val_f1=0.4300
+XGBoost trial 15/24 | val_f1=0.3987
+XGBoost trial 16/24 | val_f1=0.4471
+XGBoost trial 17/24 | val_f1=0.3907
+XGBoost trial 18/24 | val_f1=0.4043
+XGBoost trial 19/24 | val_f1=0.4260
+XGBoost trial 20/24 | val_f1=0.4325
+XGBoost trial 21/24 | val_f1=0.4120
+XGBoost trial 22/24 | val_f1=0.4008
+XGBoost trial 23/24 | val_f1=0.3679
+XGBoost trial 24/24 | val_f1=0.3943
+Best XGBoost Params: {'subsample': 1.0, 'reg_lambda': 1.0, 'reg_alpha': 0.5, 'n_estimators': 200, 'min_child_weight': 5, 'max_depth': 4, 'learning_rate': 0.03, 'gamma': 0.0, 'colsample_bytree': 1.0}
+Best XGBoost validation F1: 0.4471
+--- Advanced_XGBoost Evaluation ---
+Accuracy: 0.5007
+Precision: 0.4900
+Recall: 0.5007
+F1_Score: 0.4457
+
+Saving models...
+Done! Models saved to models/

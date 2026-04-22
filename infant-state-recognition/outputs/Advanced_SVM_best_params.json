@@ -1,0 +1,5 @@
+{
+    "kernel": "rbf",
+    "probability": true,
+    "random_state": 42
+}

@@ -1,0 +1,122 @@
+============================================================
+  Infant Cry Recognition — Kaggle Dataset Pipeline
+============================================================
+
+Classes found: ['belly_pain', 'burping', 'cold_hot', 'discomfort', 'hungry', 'laugh', 'lonely', 'noise', 'scared', 'silence', 'tired']
+File counts per class:
+  belly_pain     ████████████████████████████████████████  (127)
+  burping        ████████████████████████████████████████  (118)
+  cold_hot       ████████████████████████████████████████  (115)
+  discomfort     ████████████████████████████████████████  (138)
+  hungry         ████████████████████████████████████████  (382)
+  laugh          ████████████████████████████████████████  (108)
+  lonely         ███████████  (11)
+  noise          ████████████████████████████████████████  (108)
+  scared         ███████████████████████████  (27)
+  silence        ████████████████████████████████████████  (108)
+  tired          ████████████████████████████████████████  (136)
+
+Total files: 1378
+Imbalance ratio: 382:11 (hungry vs lonely)
+
+[1/3] Extracting ML features (augment=True)...
+      Raw samples after augment: 6890  |  features: 142
+      Applying SMOTE to training set...
+      After SMOTE — train: 16808 samples  (per class: [1528, 1528, 1528, 1528, 1528, 1528, 1528, 1528, 1528, 1528, 1528])
+      Test set (no SMOTE): 1378 samples  (per class: [127, 118, 115, 138, 382, 108, 11, 108, 27, 108, 136])
+
+[2/3] Training ML models on SMOTE-balanced data...
+  → Logistic Regression
+
+────────────────────────────────────────────────────────
+  Baseline_LogReg
+────────────────────────────────────────────────────────
+              precision    recall  f1-score   support
+
+  belly_pain       0.43      0.46      0.44       127
+     burping       0.32      0.51      0.39       118
+    cold_hot       0.20      0.26      0.23       115
+  discomfort       0.16      0.24      0.19       138
+      hungry       0.33      0.08      0.12       382
+       laugh       1.00      1.00      1.00       108
+      lonely       0.32      0.73      0.44        11
+       noise       0.95      0.92      0.93       108
+      scared       0.68      1.00      0.81        27
+     silence       0.99      1.00      1.00       108
+       tired       0.25      0.42      0.31       136
+
+    accuracy                           0.45      1378
+   macro avg       0.51      0.60      0.53      1378
+weighted avg       0.46      0.45      0.43      1378
+
+  → Decision Tree
+
+────────────────────────────────────────────────────────
+  Baseline_DecisionTree
+────────────────────────────────────────────────────────
+              precision    recall  f1-score   support
+
+  belly_pain       0.34      0.35      0.35       127
+     burping       0.33      0.39      0.36       118
+    cold_hot       0.11      0.13      0.12       115
+  discomfort       0.15      0.18      0.17       138
+      hungry       0.09      0.07      0.08       382
+       laugh       0.94      0.90      0.92       108
+      lonely       0.33      0.55      0.41        11
+       noise       0.95      0.77      0.85       108
+      scared       0.68      0.78      0.72        27
+     silence       0.99      0.98      0.99       108
+       tired       0.16      0.21      0.18       136
+
+    accuracy                           0.36      1378
+   macro avg       0.46      0.48      0.47      1378
+weighted avg       0.37      0.36      0.36      1378
+
+  → Random Forest (GridSearchCV)
+      Best RF: {'max_depth': 20, 'min_samples_leaf': 1, 'n_estimators': 200}
+
+────────────────────────────────────────────────────────
+  Advanced_RandomForest
+────────────────────────────────────────────────────────
+              precision    recall  f1-score   support
+
+  belly_pain       0.42      0.39      0.41       127
+     burping       0.46      0.43      0.45       118
+    cold_hot       0.12      0.10      0.11       115
+  discomfort       0.17      0.19      0.18       138
+      hungry       0.07      0.06      0.07       382
+       laugh       1.00      1.00      1.00       108
+      lonely       0.75      0.82      0.78        11
+       noise       0.95      0.99      0.97       108
+      scared       1.00      0.96      0.98        27
+     silence       0.99      1.00      1.00       108
+       tired       0.15      0.21      0.18       136
+
+    accuracy                           0.40      1378
+   macro avg       0.55      0.56      0.56      1378
+weighted avg       0.40      0.40      0.40      1378
+
+  → SVM (RBF kernel)
+
+────────────────────────────────────────────────────────
+  Advanced_SVM
+────────────────────────────────────────────────────────
+              precision    recall  f1-score   support
+
+  belly_pain       0.43      0.40      0.41       127
+     burping       0.44      0.42      0.43       118
+    cold_hot       0.16      0.14      0.15       115
+  discomfort       0.19      0.20      0.20       138
+      hungry       0.11      0.10      0.11       382
+       laugh       1.00      1.00      1.00       108
+      lonely       0.73      0.73      0.73        11
+       noise       0.98      0.96      0.97       108
+      scared       1.00      0.96      0.98        27
+     silence       0.99      1.00      1.00       108
+       tired       0.16      0.19      0.17       136
+
+    accuracy                           0.41      1378
+   macro avg       0.56      0.56      0.56      1378
+weighted avg       0.41      0.41      0.41      1378
+
+  → XGBoost (GridSearchCV)
