@@ -247,6 +247,7 @@ def split_with_full_class_coverage(X, y, test_size, random_state):
 
 
 def main():
+    # Main entry point for deep learning training script
     config = TrainingConfig()
     set_seed(config.random_state)
 
