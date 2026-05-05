@@ -24,7 +24,9 @@ UPLOAD_DIR = DATA_DIR / "inference_inputs"
 LOG_PATH = UPLOAD_DIR / "prediction_log.jsonl"
 CLASS_MAP_PATH = MODELS_DIR / "class_mapping.pkl"
 SCALER_PATH = MODELS_DIR / "scaler.pkl"
+DERIVED_SCALER_TEMPLATE = "scaler_{n_features}_auto.pkl"
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".ogg", ".flac", ".m4a"}
+DATASET_AUDIO_EXTENSIONS = {".wav"}
 
 MODEL_SPECS = {
     "baseline_lr": {
@@ -120,6 +122,9 @@ INV_CLASS_MAPPING = load_class_mapping()
 SCALER = load_scaler()
 AVAILABLE_MODELS = load_available_models()
 TENSORFLOW_AVAILABLE = importlib.util.find_spec("tensorflow") is not None
+SCALER_CACHE = {}
+if SCALER is not None and getattr(SCALER, "n_features_in_", None) is not None:
+    SCALER_CACHE[int(SCALER.n_features_in_)] = SCALER
 
 
 def get_keras_model(model_key):
@@ -133,6 +138,54 @@ def get_keras_model(model_key):
 
         spec["artifact"] = tf.keras.models.load_model(spec["path"])
     return spec["artifact"]
+
+
+def iter_dataset_audio_files():
+    raw_dir = DATA_DIR / "raw"
+    if not raw_dir.exists():
+        return
+
+    for class_dir in sorted(raw_dir.iterdir()):
+        if not class_dir.is_dir():
+            continue
+        for filepath in sorted(class_dir.iterdir()):
+            if filepath.suffix.lower() in DATASET_AUDIO_EXTENSIONS:
+                yield filepath
+
+
+def get_scaler_for_dim(n_features):
+    if n_features is None:
+        return None
+
+    n_features = int(n_features)
+    if n_features in SCALER_CACHE:
+        return SCALER_CACHE[n_features]
+
+    scaler_path = MODELS_DIR / DERIVED_SCALER_TEMPLATE.format(n_features=n_features)
+    if scaler_path.exists():
+        scaler = joblib.load(scaler_path)
+        SCALER_CACHE[n_features] = scaler
+        return scaler
+
+    from sklearn.preprocessing import StandardScaler
+
+    feature_rows = []
+    for filepath in iter_dataset_audio_files() or []:
+        try:
+            audios, sr = preprocess_pipeline(str(filepath), augment=False)
+            feature_rows.append(extract_features_for_dim(audios[0], sr, n_features=n_features))
+        except Exception:
+            continue
+
+    if not feature_rows:
+        raise RuntimeError(
+            f"Could not build a scaler for {n_features} features because no dataset audio could be processed."
+        )
+
+    scaler = StandardScaler().fit(np.asarray(feature_rows))
+    joblib.dump(scaler, scaler_path)
+    SCALER_CACHE[n_features] = scaler
+    return scaler
 
 
 def build_mobilenet_input(audio, sr=22050, image_size=160):
@@ -200,12 +253,14 @@ def predict_with_model(model_key, filepath):
     model_spec = AVAILABLE_MODELS[model_key]
 
     if model_spec["type"] in {"sklearn", "xgboost"}:
-        if SCALER is None:
-            raise RuntimeError("Scaler not found. Re-train or restore ML artifacts first.")
+        if model_spec["type"] == "sklearn":
+            expected_dim = getattr(model_spec["artifact"], "n_features_in_", None)
+        else:
+            expected_dim = getattr(SCALER, "n_features_in_", 53) if SCALER is not None else 53
 
-        expected_dim = getattr(SCALER, "n_features_in_", None)
         features = extract_features_for_dim(audio, sr, n_features=expected_dim)
-        scaled_features = SCALER.transform([features])
+        scaler = get_scaler_for_dim(expected_dim)
+        scaled_features = scaler.transform([features]) if scaler is not None else np.asarray([features])
 
         if model_spec["type"] == "sklearn":
             model = model_spec["artifact"]
@@ -253,6 +308,7 @@ def index():
             ),
         }
         for key, spec in AVAILABLE_MODELS.items()
+        if spec["type"] != "keras" or TENSORFLOW_AVAILABLE
     ]
     return render_template(
         "index.html",
