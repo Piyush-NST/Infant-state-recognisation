@@ -221,7 +221,11 @@ python app/app.py
 ```
 Open: `http://127.0.0.1:8080/`
 
-Upload any `.wav` file to get a prediction with confidence score.
+Upload a supported audio file (`.wav`, `.mp3`, `.ogg`, `.flac`, `.m4a`) to:
+- choose one of the trained repo models from the frontend
+- run inference and view confidence scores
+- save the original input inside `data/inference_inputs/`
+- log prediction metadata in `data/inference_inputs/prediction_log.jsonl`
 
 ---
 

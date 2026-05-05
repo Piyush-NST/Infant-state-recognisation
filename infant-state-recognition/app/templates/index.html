@@ -3,95 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infant State Recognition</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
-        h1 { color: #333; margin-bottom: 5px; }
-        p { color: #666; margin-bottom: 20px; }
-        .upload-area { border: 2px dashed #4a90e2; border-radius: 8px; padding: 40px; margin-bottom: 20px; background: #f8fbff; cursor: pointer; transition: 0.3s; }
-        .upload-area:hover { background: #e8f1fb; }
-        input[type="file"] { display: none; }
-        .btn { background: #4a90e2; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
-        .btn:hover { background: #357abd; }
-        .result { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; font-size: 18px; }
-        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        #file-name { margin-top: 10px; color: #555; font-style: italic; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4a90e2; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    <title>Infant State Recognition Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Infant State Recognition</h1>
-        <p>Upload an audio file (.wav) to predict the infant's state.</p>
-        
-        <form id="upload-form">
-            <label for="audio-upload" class="upload-area" id="drop-zone">
-                <div style="font-size: 40px; margin-bottom: 10px;">🎙️</div>
-                <div>Click to browse or drag & drop audio file</div>
-                <div id="file-name"></div>
-            </label>
-            <input type="file" id="audio-upload" name="file" accept="audio/wav" required>
-            
-            <button type="submit" class="btn">Analyze Audio</button>
-        </form>
-        
-        <div class="loader" id="loader"></div>
-        <div class="result" id="result-box"></div>
-    </div>
+    <main class="page-shell">
+        <section class="hero-card">
+            <div class="hero-copy">
+                <p class="eyebrow">Audio Inference Workspace</p>
+                <h1>Run infant-state models from one upload screen.</h1>
+                <p class="hero-text">
+                    Upload an audio clip, choose a trained model from this repo, and save the input file
+                    directly into the project for later review and retraining.
+                </p>
+                <div class="stat-row">
+                    <div class="stat-pill">
+                        <span class="stat-label">Default model</span>
+                        <strong>{{ default_model_label }}</strong>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="stat-label">Stored inputs</span>
+                        <strong>data/inference_inputs/</strong>
+                    </div>
+                </div>
+                {% if not tensorflow_available %}
+                <p class="runtime-note">
+                    MobileNetV2 is listed in the repo, but this local Python 3.14 environment does not currently
+                    support TensorFlow wheels, so the frontend defaults to the best available ML model here.
+                </p>
+                {% endif %}
+            </div>
+            <div class="hero-panel">
+                <div class="panel-glow"></div>
+                <div class="signal-card">
+                    <span>Supported</span>
+                    <strong>WAV, MP3, OGG, FLAC, M4A</strong>
+                </div>
+                <div class="signal-card">
+                    <span>Categories</span>
+                    <strong>Baseline ML, Advanced ML, Deep Learning</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace-grid">
+            <section class="card upload-card">
+                <div class="section-head">
+                    <p class="eyebrow">Run Prediction</p>
+                    <h2>Upload and analyze audio</h2>
+                </div>
+
+                <form id="upload-form" class="upload-form">
+                    <label class="field-label" for="model-select">Choose model</label>
+                    <select id="model-select" name="model_key" class="select-input">
+                        {% for model in models %}
+                        <option value="{{ model.key }}" {% if model.recommended %}selected{% endif %}>
+                            {{ model.label }} · {{ model.category }}{% if model.recommended %} · Recommended{% endif %}{% if model.runtime_note %} · {{ model.runtime_note }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="audio-upload" class="dropzone" id="drop-zone">
+                        <input type="file" id="audio-upload" name="file" accept=".wav,.mp3,.ogg,.flac,.m4a,audio/*" required>
+                        <div class="drop-icon">Wave</div>
+                        <strong>Drop audio here or click to browse</strong>
+                        <span>We save the original upload inside this repo before inference runs.</span>
+                        <div id="file-meta" class="file-meta"></div>
+                    </label>
+
+                    <audio id="audio-preview" class="audio-preview" controls></audio>
+
+                    <button type="submit" class="primary-btn">Analyze Audio</button>
+                </form>
+
+                <div class="loader" id="loader">
+                    <div class="loader-ring"></div>
+                    <span>Running inference and saving your upload...</span>
+                </div>
+
+                <article class="result-card" id="result-card">
+                    <div class="result-head">
+                        <p class="eyebrow">Latest Result</p>
+                        <h3 id="result-title">Waiting for input</h3>
+                    </div>
+                    <div id="result-body" class="result-body">
+                        Pick a model, upload an audio clip, and the prediction will appear here.
+                    </div>
+                </article>
+            </section>
+
+            <section class="card history-card">
+                <div class="section-head">
+                    <p class="eyebrow">Repo History</p>
+                    <h2>Recent saved predictions</h2>
+                </div>
+                <div id="history-list" class="history-list">
+                    {% if recent_predictions %}
+                        {% for item in recent_predictions %}
+                        <article class="history-item">
+                            <div class="history-main">
+                                <strong>{{ item.prediction }}</strong>
+                                <span>{{ item.model_label }}</span>
+                            </div>
+                            <div class="history-meta">
+                                <span>{{ item.confidence }}%</span>
+                                <code>{{ item.saved_path }}</code>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="history-empty">No saved predictions yet. Your first upload will appear here.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </section>
+    </main>
 
     <script>
         const fileInput = document.getElementById('audio-upload');
-        const fileNameDisplay = document.getElementById('file-name');
+        const fileMeta = document.getElementById('file-meta');
         const form = document.getElementById('upload-form');
-        const resultBox = document.getElementById('result-box');
         const loader = document.getElementById('loader');
+        const resultCard = document.getElementById('result-card');
+        const resultTitle = document.getElementById('result-title');
+        const resultBody = document.getElementById('result-body');
+        const historyList = document.getElementById('history-list');
+        const audioPreview = document.getElementById('audio-preview');
 
-        fileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                fileNameDisplay.textContent = this.files[0].name;
-            } else {
-                fileNameDisplay.textContent = '';
+        function escapeHtml(value) {
+            return value
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function renderHistory(items) {
+            if (!items.length) {
+                historyList.innerHTML = '<p class="history-empty">No saved predictions yet. Your first upload will appear here.</p>';
+                return;
             }
+
+            historyList.innerHTML = items.map((item) => `
+                <article class="history-item">
+                    <div class="history-main">
+                        <strong>${escapeHtml(item.prediction)}</strong>
+                        <span>${escapeHtml(item.model_label)}</span>
+                    </div>
+                    <div class="history-meta">
+                        <span>${item.confidence}%</span>
+                        <code>${escapeHtml(item.saved_path)}</code>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        async function refreshHistory() {
+            try {
+                const response = await fetch('/recent-predictions');
+                const payload = await response.json();
+                renderHistory(payload.items || []);
+            } catch (error) {
+                console.error('Failed to refresh history', error);
+            }
+        }
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files?.[0];
+            if (!file) {
+                fileMeta.textContent = '';
+                audioPreview.removeAttribute('src');
+                audioPreview.style.display = 'none';
+                return;
+            }
+
+            fileMeta.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            audioPreview.src = URL.createObjectURL(file);
+            audioPreview.style.display = 'block';
         });
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!fileInput.files[0]) return;
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            if (!fileInput.files?.[0]) {
+                return;
+            }
 
-            // UI updating
-            resultBox.style.display = 'none';
-            resultBox.className = 'result';
-            loader.style.display = 'block';
+            loader.style.display = 'flex';
+            resultCard.classList.remove('error');
+            resultCard.classList.remove('success');
+            resultTitle.textContent = 'Processing upload';
+            resultBody.textContent = 'Saving the file and running inference...';
+
+            const formData = new FormData(form);
 
             try {
                 const response = await fetch('/predict', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
                 loader.style.display = 'none';
-                
-                resultBox.style.display = 'block';
-                if (response.ok) {
-                    resultBox.classList.add('success');
-                    resultBox.innerHTML = `<strong>Prediction:</strong> ${data.prediction.toUpperCase()}<br><small>Confidence: ${data.confidence}</small>`;
-                } else {
-                    resultBox.classList.add('error');
-                    resultBox.textContent = `Error: ${data.error}`;
+
+                if (!response.ok) {
+                    resultCard.classList.add('error');
+                    resultTitle.textContent = 'Prediction failed';
+                    resultBody.textContent = data.error || 'Something went wrong while processing the upload.';
+                    return;
                 }
-            } catch (err) {
+
+                resultCard.classList.add('success');
+                resultTitle.textContent = `${data.prediction} · ${data.confidence}`;
+                resultBody.innerHTML = `
+                    <div class="result-grid">
+                        <div>
+                            <span class="result-label">Model</span>
+                            <strong>${escapeHtml(data.model)}</strong>
+                        </div>
+                        <div>
+                            <span class="result-label">Saved path</span>
+                            <code>${escapeHtml(data.saved_path)}</code>
+                        </div>
+                        <div>
+                            <span class="result-label">Timestamp</span>
+                            <strong>${escapeHtml(data.timestamp)}</strong>
+                        </div>
+                    </div>
+                    <div class="top-preds">
+                        <span class="result-label">Top predictions</span>
+                        ${data.top_predictions.map((item) => `
+                            <div class="top-pred-row">
+                                <strong>${escapeHtml(item.label)}</strong>
+                                <span>${item.confidence}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                await refreshHistory();
+            } catch (error) {
                 loader.style.display = 'none';
-                resultBox.style.display = 'block';
-                resultBox.classList.add('error');
-                resultBox.textContent = 'Failed to connect to the server.';
+                resultCard.classList.add('error');
+                resultTitle.textContent = 'Server unavailable';
+                resultBody.textContent = 'The frontend could not reach the Flask backend.';
             }
         });
     </script>
