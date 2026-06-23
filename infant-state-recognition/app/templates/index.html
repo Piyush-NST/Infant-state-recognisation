@@ -35,80 +35,250 @@
             </div>
         </section>
 
-        <section class="workspace-grid">
-            <section class="card upload-card">
-                <div class="section-head">
-                    <p class="eyebrow">Run Prediction</p>
-                    <h2>Upload and analyze audio</h2>
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="home">Home</button>
+            <button class="tab-btn" data-tab="architecture">Architecture</button>
+            <button class="tab-btn" data-tab="metrics">Metrics</button>
+            <button class="tab-btn" data-tab="demo">Demo</button>
+            <button class="tab-btn" data-tab="future-scope">Future Scope</button>
+        </nav>
+
+        <!-- Tab Contents -->
+        <div class="tab-content">
+            <!-- Home Panel -->
+            <div class="tab-panel active" id="home-panel">
+                <div class="info-grid">
+                    <article class="info-card">
+                        <h3>Project Objective</h3>
+                        <p>Infants communicate their needs and physical discomforts primarily through crying. This system utilizes advanced Machine Learning and Deep Learning architectures to recognize distinct infant states from acoustic signals, offering parents and healthcare providers automated, real-time insights.</p>
+                        <p>By classifying baby cries into specific behavioral categories, we bridge the gap between neonatal vocalizations and actionable care actions.</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>Core Specs & Classes</h3>
+                        <p>The system classifies input signals into 11 distinct classes corresponding to baby crying triggers and baseline states:</p>
+                        <ul class="highlight-list">
+                            <li class="highlight-item"><span>Hunger, Discomfort, Burping, Silence, Noise</span></li>
+                            <li class="highlight-item"><span>Belly Pain, Lonely, Scared, Tired, Laugh, Cold/Hot</span></li>
+                        </ul>
+                    </article>
                 </div>
+            </div>
 
-                <form id="upload-form" class="upload-form">
-                    <label class="field-label" for="model-select">Choose model</label>
-                    <select id="model-select" name="model_key" class="select-input">
-                        {% for model in models %}
-                        <option value="{{ model.key }}" {% if model.recommended %}selected{% endif %} {% if model.disabled %}disabled{% endif %}>
-                            {{ model.label }} · {{ model.category }}{% if model.status_note %} · {{ model.status_note }}{% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-
-                    <label for="audio-upload" class="dropzone" id="drop-zone">
-                        <input type="file" id="audio-upload" name="file" accept=".wav,.mp3,.ogg,.flac,.m4a,audio/*" required>
-                        <div class="drop-icon">Wave</div>
-                        <strong>Drop audio here or click to browse</strong>
-                        <span>We save the original upload inside this repo before inference runs.</span>
-                        <div id="file-meta" class="file-meta"></div>
-                    </label>
-
-                    <audio id="audio-preview" class="audio-preview" controls></audio>
-
-                    <button type="submit" class="primary-btn">Analyze Audio</button>
-                </form>
-
-                <div class="loader" id="loader">
-                    <div class="loader-ring"></div>
-                    <span>Running inference and saving your upload...</span>
-                </div>
-
-                <article class="result-card" id="result-card">
-                    <div class="result-head">
-                        <p class="eyebrow">Latest Result</p>
-                        <h3 id="result-title">Waiting for input</h3>
+            <!-- Architecture Panel -->
+            <div class="tab-panel" id="architecture-panel">
+                <div class="arch-grid">
+                    <div class="arch-steps">
+                        <article class="arch-step-card">
+                            <strong>Step 1</strong>
+                            <h4>Audio Acquisition</h4>
+                            <p>User uploads baby cry audio clips (WAV, MP3, OGG, FLAC, M4A) which are safely archived in the system's database.</p>
+                        </article>
+                        <article class="arch-step-card">
+                            <strong>Step 2</strong>
+                            <h4>Preprocessing Pipeline</h4>
+                            <p>Acoustic signals undergo resampling, amplitude normalization, silence trimming, and noise filtering to isolate cry triggers.</p>
+                        </article>
+                        <article class="arch-step-card">
+                            <strong>Step 3</strong>
+                            <h4>Feature Engineering</h4>
+                            <p>Extracts Mel-Frequency Cepstral Coefficients (MFCCs), Chroma vectors, Spectral Contrast, Spectral Rolloff, RMS, and 2D Mel-Spectrogram frames.</p>
+                        </article>
+                        <article class="arch-step-card">
+                            <strong>Step 4</strong>
+                            <h4>Model Inference Zoo</h4>
+                            <p>Processes extracted feature inputs through a series of model classifiers (Logistic Regression, Random Forest, SVM, XGBoost, and MobileNetV2 Neural Network) to return classification categories and prediction probabilities.</p>
+                        </article>
                     </div>
-                    <div id="result-body" class="result-body">
-                        Pick a model, upload an audio clip, and the prediction will appear here.
+                    <div class="arch-diagram-wrapper">
+                        <img src="{{ url_for('static', filename='architecture_diagram.png') }}" alt="Infant State Recognition System Architecture Flowchart">
                     </div>
-                </article>
-            </section>
-
-            <section class="card history-card">
-                <div class="section-head">
-                    <p class="eyebrow">Repo History</p>
-                    <h2>Recent saved predictions</h2>
                 </div>
-                <div id="history-list" class="history-list">
-                    {% if recent_predictions %}
-                        {% for item in recent_predictions %}
-                        <article class="history-item">
-                            <div class="history-main">
-                                <strong>{{ item.prediction }}</strong>
-                                <span>{{ item.model_label }}</span>
+            </div>
+
+            <!-- Metrics Panel -->
+            <div class="tab-panel" id="metrics-panel">
+                <div class="metrics-grid">
+                    <article class="metric-card full-width">
+                        <div class="metric-info">
+                            <h3>Model Performance Benchmarks</h3>
+                            <p>This comparison evaluates the validation accuracy and F1-scores across all classical Machine Learning architectures and the Deep Learning MobileNetV2 network. The Advanced SVM and Random Forest models demonstrate exceptional accuracy on the engineered 142-dimensional feature space.</p>
+                        </div>
+                        <div class="metric-visual">
+                            <img src="{{ url_for('static', filename='all_models_comparison.png') }}" alt="Model Performance Comparison Plot">
+                        </div>
+                    </article>
+                    
+                    <article class="metric-card">
+                        <div class="metric-info">
+                            <h3>Acoustic Feature Importance</h3>
+                            <p>Analysis of feature coefficients shows the top acoustic properties driving the XGBoost classifier. Lower-order Mel-Frequency Cepstral Coefficients (MFCCs), spectral roll-off frequencies, and RMS energy levels constitute the most predictive signals.</p>
+                        </div>
+                        <div class="metric-visual">
+                            <img src="{{ url_for('static', filename='XGBoost_feature_importance.png') }}" alt="Acoustic Feature Importance Chart">
+                        </div>
+                    </article>
+                    
+                    <article class="metric-card">
+                        <div class="metric-info">
+                            <h3>Deep Learning Training History</h3>
+                            <p>Shows the loss and accuracy trajectories for the MobileNetV2 architecture. The model stabilizes after approximately 30 epochs of training on the mel-spectrogram arrays, achieving balanced generalization.</p>
+                        </div>
+                        <div class="metric-visual">
+                            <img src="{{ url_for('static', filename='DeepLearning_MobileNetV2_history.png') }}" alt="Deep Learning Loss and Accuracy Training History">
+                        </div>
+                    </article>
+                    
+                    <article class="metric-card full-width">
+                        <div class="metric-info">
+                            <h3>Error Analysis (Confusion Matrix)</h3>
+                            <p>Assess classification patterns and class-level confusions. Select a model below to render its confusion matrix, highlighting precision across targets like hunger, pain, or silence.</p>
+                            <div class="matrix-toggle-row">
+                                <button class="matrix-btn active" data-matrix="dl">MobileNetV2</button>
+                                <button class="matrix-btn" data-matrix="xgb">XGBoost</button>
                             </div>
-                            <div class="history-meta">
-                                <span>{{ item.confidence }}%</span>
-                                <code>{{ item.saved_path }}</code>
+                        </div>
+                        <div class="metric-visual matrix-display">
+                            <img id="confusion-matrix-img" src="{{ url_for('static', filename='DeepLearning_MobileNetV2_confusion_matrix.png') }}" alt="Confusion Matrix Diagram">
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <!-- Demo Panel -->
+            <div class="tab-panel" id="demo-panel">
+                <section class="workspace-grid">
+                    <section class="card upload-card">
+                        <div class="section-head">
+                            <p class="eyebrow">Run Prediction</p>
+                            <h2>Upload and analyze audio</h2>
+                        </div>
+
+                        <form id="upload-form" class="upload-form">
+                            <label class="field-label" for="model-select">Choose model</label>
+                            <select id="model-select" name="model_key" class="select-input">
+                                {% for model in models %}
+                                <option value="{{ model.key }}" {% if model.recommended %}selected{% endif %} {% if model.disabled %}disabled{% endif %}>
+                                    {{ model.label }} · {{ model.category }}{% if model.status_note %} · {{ model.status_note }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="audio-upload" class="dropzone" id="drop-zone">
+                                <input type="file" id="audio-upload" name="file" accept=".wav,.mp3,.ogg,.flac,.m4a,audio/*" required>
+                                <div class="drop-icon">Wave</div>
+                                <strong>Drop audio here or click to browse</strong>
+                                <span>We save the original upload inside this repo before inference runs.</span>
+                                <div id="file-meta" class="file-meta"></div>
+                            </label>
+
+                            <audio id="audio-preview" class="audio-preview" controls></audio>
+
+                            <button type="submit" class="primary-btn">Analyze Audio</button>
+                        </form>
+
+                        <div class="loader" id="loader">
+                            <div class="loader-ring"></div>
+                            <span>Running inference and saving your upload...</span>
+                        </div>
+
+                        <article class="result-card" id="result-card">
+                            <div class="result-head">
+                                <p class="eyebrow">Latest Result</p>
+                                <h3 id="result-title">Waiting for input</h3>
+                            </div>
+                            <div id="result-body" class="result-body">
+                                Pick a model, upload an audio clip, and the prediction will appear here.
                             </div>
                         </article>
-                        {% endfor %}
-                    {% else %}
-                        <p class="history-empty">No saved predictions yet. Your first upload will appear here.</p>
-                    {% endif %}
+                    </section>
+
+                    <section class="card history-card">
+                        <div class="section-head">
+                            <p class="eyebrow">Repo History</p>
+                            <h2>Recent saved predictions</h2>
+                        </div>
+                        <div id="history-list" class="history-list">
+                            {% if recent_predictions %}
+                                {% for item in recent_predictions %}
+                                <article class="history-item">
+                                    <div class="history-main">
+                                        <strong>{{ item.prediction }}</strong>
+                                        <span>{{ item.model_label }}</span>
+                                    </div>
+                                    <div class="history-meta">
+                                        <span>{{ item.confidence }}%</span>
+                                        <code>{{ item.saved_path }}</code>
+                                    </div>
+                                </article>
+                                {% endfor %}
+                            {% else %}
+                                <p class="history-empty">No saved predictions yet. Your first upload will appear here.</p>
+                            {% endif %}
+                        </div>
+                    </section>
+                </section>
+            </div>
+
+            <!-- Future Scope Panel -->
+            <div class="tab-panel" id="future-scope-panel">
+                <div class="roadmap-timeline">
+                    <article class="timeline-node">
+                        <span class="node-badge">Phase 1</span>
+                        <h3>Smart Monitor Integration</h3>
+                        <p>Deploy the inference pipeline onto IoT-enabled smart nursery baby monitors to stream predictions directly to parents' smartphones.</p>
+                    </article>
+                    <article class="timeline-node">
+                        <span class="node-badge">Phase 2</span>
+                        <h3>Edge TFLite Inference</h3>
+                        <p>Convert the Deep Learning models to TensorFlow Lite format to achieve ultra-fast, local, off-grid prediction processing directly on mobile devices.</p>
+                    </article>
+                    <article class="timeline-node">
+                        <span class="node-badge">Phase 3</span>
+                        <h3>Multimodal State Modeling</h3>
+                        <p>Incorporate camera feeds using computer vision to evaluate physical postures (fists, kicks, face grimacing) alongside cry acoustics for context-rich hybrid diagnostics.</p>
+                    </article>
                 </div>
-            </section>
-        </section>
+            </div>
+        </div>
     </main>
 
     <script>
+        // Tab switching logic
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.getAttribute('data-tab');
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(`${targetTab}-panel`).classList.add('active');
+            });
+        });
+
+        // Confusion matrix toggle logic
+        const matrixBtns = document.querySelectorAll('.matrix-btn');
+        const matrixImg = document.getElementById('confusion-matrix-img');
+
+        matrixBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetMatrix = btn.getAttribute('data-matrix');
+                
+                matrixBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                if (targetMatrix === 'dl') {
+                    matrixImg.src = "{{ url_for('static', filename='DeepLearning_MobileNetV2_confusion_matrix.png') }}";
+                } else if (targetMatrix === 'xgb') {
+                    matrixImg.src = "{{ url_for('static', filename='Advanced_XGBoost_confusion_matrix.png') }}";
+                }
+            });
+        });
+
         const fileInput = document.getElementById('audio-upload');
         const fileMeta = document.getElementById('file-meta');
         const form = document.getElementById('upload-form');
