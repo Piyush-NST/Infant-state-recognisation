@@ -140,6 +140,14 @@ body {
     background: radial-gradient(circle, rgba(198, 107, 61, 0.3), transparent 68%);
 }
 
+.hero-baby-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+    display: block;
+}
+
 .signal-card {
     position: relative;
     z-index: 1;
