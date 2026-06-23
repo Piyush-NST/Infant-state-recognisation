@@ -1,4 +1,4 @@
-# 🍼 Infant State Recognition System (Audio-Based)
+# Infant State Recognition System (Audio-Based)
 
 > **11-class infant cry/sound classification using ML & Deep Learning on the Kaggle `baby-cry` dataset.**
 
