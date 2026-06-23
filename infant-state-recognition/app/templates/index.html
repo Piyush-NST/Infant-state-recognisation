@@ -29,12 +29,6 @@
                         <strong>data/inference_inputs/</strong>
                     </div>
                 </div>
-                {% if not tensorflow_available %}
-                <p class="runtime-note">
-                    MobileNetV2 is listed in the repo, but this local Python 3.14 environment does not currently
-                    support TensorFlow wheels, so the frontend defaults to the best available ML model here.
-                </p>
-                {% endif %}
             </div>
             <div class="hero-panel">
                 <div class="panel-glow"></div>
@@ -60,8 +54,8 @@
                     <label class="field-label" for="model-select">Choose model</label>
                     <select id="model-select" name="model_key" class="select-input">
                         {% for model in models %}
-                        <option value="{{ model.key }}" {% if model.recommended %}selected{% endif %}>
-                            {{ model.label }} · {{ model.category }}{% if model.recommended %} · Recommended{% endif %}{% if model.runtime_note %} · {{ model.runtime_note }}{% endif %}
+                        <option value="{{ model.key }}" {% if model.recommended %}selected{% endif %} {% if model.disabled %}disabled{% endif %}>
+                            {{ model.label }} · {{ model.category }}{% if model.status_note %} · {{ model.status_note }}{% endif %}
                         </option>
                         {% endfor %}
                     </select>

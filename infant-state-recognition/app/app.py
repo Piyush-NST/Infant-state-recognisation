@@ -1,8 +1,14 @@
 import json
 import os
 import importlib.util
+import subprocess
 from datetime import datetime
 from pathlib import Path
+
+os.environ.setdefault(
+    "MPLCONFIGDIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".mplconfig"),
+)
 
 import joblib
 import numpy as np
@@ -18,15 +24,19 @@ from src.preprocessing import preprocess_pipeline
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
 MODELS_DIR = BASE_DIR / "models"
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "inference_inputs"
 LOG_PATH = UPLOAD_DIR / "prediction_log.jsonl"
 CLASS_MAP_PATH = MODELS_DIR / "class_mapping.pkl"
 SCALER_PATH = MODELS_DIR / "scaler.pkl"
+TF_PYTHON_PATH = PROJECT_ROOT / ".venv-tf" / "bin" / "python"
+MOBILENET_RUNNER_PATH = BASE_DIR / "app" / "mobilenet_runner.py"
 DERIVED_SCALER_TEMPLATE = "scaler_{n_features}_auto.pkl"
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".ogg", ".flac", ".m4a"}
 DATASET_AUDIO_EXTENSIONS = {".wav"}
+TENSORFLOW_AVAILABLE = importlib.util.find_spec("tensorflow") is not None
 
 MODEL_SPECS = {
     "baseline_lr": {
@@ -35,12 +45,12 @@ MODEL_SPECS = {
         "type": "sklearn",
         "path": MODELS_DIR / "baseline_lr.pkl",
     },
-    "baseline_dt": {
-        "label": "Decision Tree",
-        "category": "Baseline ML",
-        "type": "sklearn",
-        "path": MODELS_DIR / "baseline_dt.pkl",
-    },
+    # "baseline_dt": {
+    #     "label": "Decision Tree",
+    #     "category": "Baseline ML",
+    #     "type": "sklearn",
+    #     "path": MODELS_DIR / "baseline_dt.pkl",
+    # },
     "advanced_rf": {
         "label": "Random Forest",
         "category": "Advanced ML",
@@ -73,6 +83,10 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def can_delegate_keras():
+    return TF_PYTHON_PATH.exists() and MOBILENET_RUNNER_PATH.exists()
+
+
 def allowed_file(filename):
     return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
 
@@ -93,6 +107,9 @@ def load_scaler():
 def load_available_models():
     loaded_models = {}
     for model_key, spec in MODEL_SPECS.items():
+        if spec["type"] == "keras" and not TENSORFLOW_AVAILABLE and not can_delegate_keras():
+            continue
+
         if not spec["path"].exists():
             continue
 
@@ -110,7 +127,7 @@ def load_available_models():
             booster.load_model(str(spec["path"]))
             loaded_spec["artifact"] = booster
         elif spec["type"] == "keras":
-            # Lazy-load Keras model only when selected for inference.
+            # Lazy-load locally, or delegate to the TensorFlow venv at prediction time.
             loaded_spec["artifact"] = None
 
         loaded_models[model_key] = loaded_spec
@@ -118,13 +135,50 @@ def load_available_models():
     return loaded_models
 
 
+def build_model_options():
+    available_model_key = get_default_model_key()
+    options = []
+
+    for model_key, spec in MODEL_SPECS.items():
+        exists_on_disk = spec["path"].exists()
+        is_available = model_key in AVAILABLE_MODELS
+
+        status_note = ""
+        if spec["type"] == "keras" and not TENSORFLOW_AVAILABLE and can_delegate_keras():
+            status_note = "Runs through TensorFlow environment"
+        elif spec["type"] == "keras" and not TENSORFLOW_AVAILABLE:
+            status_note = "TensorFlow environment missing"
+        elif not exists_on_disk:
+            status_note = "Model file missing"
+
+        options.append(
+            {
+                "key": model_key,
+                "label": spec["label"],
+                "category": spec["category"],
+                "recommended": model_key == available_model_key,
+                "disabled": not is_available,
+                "status_note": status_note,
+            }
+        )
+
+    return options
+
+
 INV_CLASS_MAPPING = load_class_mapping()
 SCALER = load_scaler()
 AVAILABLE_MODELS = load_available_models()
-TENSORFLOW_AVAILABLE = importlib.util.find_spec("tensorflow") is not None
 SCALER_CACHE = {}
 if SCALER is not None and getattr(SCALER, "n_features_in_", None) is not None:
     SCALER_CACHE[int(SCALER.n_features_in_)] = SCALER
+
+
+def get_default_model_key():
+    preferred_order = ["advanced_svm", "advanced_rf", "advanced_xgb", "baseline_lr", "baseline_dt"]
+    for model_key in preferred_order:
+        if model_key in AVAILABLE_MODELS:
+            return model_key
+    return next(iter(AVAILABLE_MODELS), None)
 
 
 def get_keras_model(model_key):
@@ -138,6 +192,21 @@ def get_keras_model(model_key):
 
         spec["artifact"] = tf.keras.models.load_model(spec["path"])
     return spec["artifact"]
+
+
+def run_keras_via_tensorflow_env(filepath):
+    if not can_delegate_keras():
+        raise RuntimeError("TensorFlow environment is not ready for MobileNetV2 inference.")
+
+    completed = subprocess.run(
+        [str(TF_PYTHON_PATH), str(MOBILENET_RUNNER_PATH), str(filepath)],
+        cwd=str(BASE_DIR),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(completed.stdout.strip().splitlines()[-1])
+    return int(payload["pred_idx"]), np.asarray(payload["probabilities"], dtype=float)
 
 
 def iter_dataset_audio_files():
@@ -255,6 +324,8 @@ def predict_with_model(model_key, filepath):
     if model_spec["type"] in {"sklearn", "xgboost"}:
         if model_spec["type"] == "sklearn":
             expected_dim = getattr(model_spec["artifact"], "n_features_in_", None)
+        elif model_spec["type"] == "xgboost":
+            expected_dim = model_spec["artifact"].num_features()
         else:
             expected_dim = getattr(SCALER, "n_features_in_", 53) if SCALER is not None else 53
 
@@ -282,6 +353,9 @@ def predict_with_model(model_key, filepath):
 
         return pred_idx, np.asarray(probabilities, dtype=float)
 
+    if not TENSORFLOW_AVAILABLE:
+        return run_keras_via_tensorflow_env(filepath)
+
     model = get_keras_model(model_key)
     model_input = build_mobilenet_input(audio, sr=sr)
     probabilities = model.predict(model_input, verbose=0)[0]
@@ -291,28 +365,10 @@ def predict_with_model(model_key, filepath):
 
 @app.route("/", methods=["GET"])
 def index():
-    recommended_key = "mobilenet_v2" if TENSORFLOW_AVAILABLE and "mobilenet_v2" in AVAILABLE_MODELS else "advanced_svm"
-    if recommended_key not in AVAILABLE_MODELS and AVAILABLE_MODELS:
-        recommended_key = next(iter(AVAILABLE_MODELS))
-
-    model_options = [
-        {
-            "key": key,
-            "label": spec["label"],
-            "category": spec["category"],
-            "recommended": key == recommended_key,
-            "runtime_note": (
-                "Requires TensorFlow runtime"
-                if spec["type"] == "keras" and not TENSORFLOW_AVAILABLE
-                else ""
-            ),
-        }
-        for key, spec in AVAILABLE_MODELS.items()
-        if spec["type"] != "keras" or TENSORFLOW_AVAILABLE
-    ]
+    recommended_key = get_default_model_key()
     return render_template(
         "index.html",
-        models=model_options,
+        models=build_model_options(),
         default_model_label=AVAILABLE_MODELS[recommended_key]["label"] if recommended_key else "Unavailable",
         tensorflow_available=TENSORFLOW_AVAILABLE,
         recent_predictions=read_recent_logs(),
@@ -328,7 +384,10 @@ def predict():
         return jsonify({"error": "No audio file was provided."}), 400
 
     file = request.files["file"]
-    model_key = request.form.get("model_key", "mobilenet_v2")
+    model_key = request.form.get("model_key") or get_default_model_key()
+
+    if model_key not in AVAILABLE_MODELS:
+        return jsonify({"error": "Selected model is not available in this environment."}), 400
 
     if file.filename == "":
         return jsonify({"error": "Please choose an audio file."}), 400
@@ -390,4 +449,4 @@ def recent_predictions():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)

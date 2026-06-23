@@ -1,5 +1,12 @@
 .venv/
 **/.venv/
+.venv-tf/
+**/.venv-tf/
+venv/
+**/venv/
+.author-rewrite-temp/
+**/.author-rewrite-temp/
+.mplconfig/
+**/.mplconfig/
 __pycache__/
 *.pyc
-
